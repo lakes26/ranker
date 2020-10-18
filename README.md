@@ -20,7 +20,7 @@ on "save" the program will promt the user for a file in which to save the result
 on "quit" the program will promt the user whether he wants to save. The user will then input:<br/>
     'y' indicating "yes",<br/>
     or <br/>
-    'n' indicating "no",<br/>
+    'n' indicating "no",<br/><br/>
  on yes, the program will follow the save protocol.<br/>
  The program will then output a list to stdout containing the elements ranked.
  
