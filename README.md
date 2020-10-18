@@ -18,13 +18,13 @@ Valid responses are:<br/><br/>
 on "save" the program will promt the user for a file in which to save the results. If the file does not exist, one will be created if possible.
 
 on "quit" the program will promt the user whether he wants to save. The user will then input:<br/>
-    'y' indicating "yes",<br/>
+    'y' indicating "yes"<br/>
     or <br/>
-    'n' indicating "no",<br/><br/>
+    'n' indicating "no"<br/><br/>
  on yes, the program will follow the save protocol.<br/>
  The program will then output a list to stdout containing the elements ranked.
  
- The ranking algorithm works by ranking the elements based on the fraction: how many times the element is selected / how many times the element has appeared.<br/>
- This algorithm requires a reletivly large data set to produce accurate results but over an infinatly large sample, it converges to the actual rankings.<br/>
+ The ranking algorithm works by ranking the elements based on the fraction: how many times the element is selected / how many times the element has appeared.
+ This algorithm requires a reletivly large data set to produce accurate results but over an infinatly large sample, it converges to the actual rankings.
  In the case that there are not enough pairwise comparisons to yeild a unique fraction for each element, the elements with the same fraction appear in random order in the output.
  
