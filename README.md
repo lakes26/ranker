@@ -9,10 +9,8 @@ If there are no command line arguments, the program will promt an input file fro
 The program prints two random elemetns to standard out and promts a response from stdin.
 
 Valid responses are:
-    '1' or '2' indicating your prefered element from the 2 given
-    or
-    's' indicating "save"
-    or
+    '1' or '2' indicating your prefered element from the 2 given\n
+    's' indicating "save"\n
     'q' indicating "quit"
   
 on "save" the program will promt the user for a file in which to save the results. If the file does not exist, one will be created if possible.
