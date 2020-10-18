@@ -1,0 +1,30 @@
+# ranker
+A Linux command line program written in C that generates rankings from pariwise comparisons.
+
+The program takes up to 2 optional command line arguments. 
+The first is an input file containing the list of elements to rank with each element appearing on its own line.
+The second is a save file where each line is directly associated with the line in the input file and contains 2 comma-seperated integers.
+If there are no command line arguments, the program will promt an input file from standard in.
+
+The program prints two random elemetns to standard out and promts a response from stdin.
+
+Valid responses are:
+    '1' or '2' indicating your prefered element from the 2 given
+    or
+    's' indicating "save"
+    or
+    'q' indicating "quit"
+  
+on "save" the program will promt the user for a file in which to save the results. If the file does not exist, one will be created if possible.
+
+on "quit" the program will promt the user whether he wants to save. The user will then input:
+    'y' indicating "yes",
+    or 
+    'n' indicating "no",
+ on yes, the program will follow the save protocol.
+ The program will then output a list to stdout containing the elements ranked.
+ 
+ The ranking algorithm works by ranking the elements based on the fraction: how many times the element is selected / how many times the element has appeared.
+ This algorithm requires a reletivly large data set to produce accurate results but over an infinatly large sample, it converges to the actual rankings.
+ In the case that there are not enough pairwise comparisons to yeild a unique fraction for each element, the elements with the same fraction appear in random order in the output.
+ 
