@@ -6,7 +6,7 @@ The first is an input file containing the list of elements to rank with each ele
 The second is a save file where each line is directly associated with the line in the input file and contains 2 comma-seperated integers.<br/>
 If there are no command line arguments, the program will promt an input file from standard in.<br/>
 
-The program prints two random elemetns to standard out and promts a response from stdin.
+The program loops each time printing two random elements to standard out and promting a response from stdin.
 
 Valid responses are:<br/><br/>
     '1' or '2' indicating your prefered element from the 2 given<br/>
@@ -21,7 +21,7 @@ on "quit" the program will promt the user whether he wants to save. The user wil
     'y' indicating "yes"<br/>
     or <br/>
     'n' indicating "no"<br/><br/>
- on yes, the program will follow the save protocol.<br/>
+ on "yes", the program will follow the save protocol.<br/>
  The program will then output a list to stdout containing the elements ranked.
  
  The ranking algorithm works by ranking the elements based on the fraction: how many times the element is selected / how many times the element has appeared.
