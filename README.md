@@ -1,4 +1,4 @@
-# ranker
+# Ranker
 A Linux command line program written in C that generates rankings from pariwise comparisons.
 
 The program takes up to 2 optional command line arguments. <br/>
@@ -21,8 +21,9 @@ on "quit" the program will promt the user whether he wants to save. The user wil
     'y' indicating "yes"<br/>
     or <br/>
     'n' indicating "no"<br/><br/>
- on "yes", the program will follow the save protocol.<br/>
- The program will then output a list to stdout containing the elements ranked.
+ on "yes," the program will follow the save protocol.<br/>
+ 
+ on "quit," the program will stop execution and will then output a list to stdout containing the elements ranked.
  
  The ranking algorithm works by ranking the elements based on the fraction: how many times the element is selected / how many times the element has appeared.
  This algorithm requires a reletivly large data set to produce accurate results but over an infinatly large sample, it converges to the actual rankings.
