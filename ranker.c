@@ -7,6 +7,24 @@
 #include<time.h>
 #include<ctype.h>
 
+typedef struct {
+    char *element;
+    int selected;
+    int appeared;
+} element_t;
+
+element_t *initElement() {
+    element_t *e = (element_t *)malloc(sizeof(element_t));
+    e->element = NULL;
+    e->selected = 0;
+    e->appeared = 0;
+    return e;
+}
+
+void freeElement(element_t *e) {
+    free(e->element);
+    free(e);
+}
 
 /*
 Description:
@@ -16,11 +34,9 @@ Args:
     specifying weather the file is to be opened in read mode or write mode
 Returns:
     An open file pointer to the user inputed file */
-FILE *promtFile(char *r_or_w) {
-    //declare promt message;
-    char *message = "please specify a file";
+FILE *promtFile(char *r_or_w, char *message) {
 
-    //error checking input;
+    //error checking input, user should never input non s or w;
     if(strcmp(r_or_w, "r") != 0 && strcmp(r_or_w, "w") != 0) {
         fprintf(stderr, "%s\n", "invalid argument to promtFile()");
         exit(1);
@@ -110,6 +126,7 @@ int countLines(FILE *file) {
         secondprevch = prevch;
         prevch = ch;
     }
+    rewind(file);
     return lineCount;
 }
 
@@ -121,31 +138,12 @@ Args:
     float *b, memory address of other float to be swapped.
 Return:
     void */
-void swap(float* a, float* b) {
-    float t = *a;
+void swap(element_t** a, element_t** b) {
+    element_t *t = *a;
     *a = *b;
     *b = t;
 }
 
-/*
-Description:
-    Swaps two string elements.
-Args:
-    char **a, memory address of string to be swapped
-    char **b, memory address of other string to be swapped.
-Return:
-    void */
-void swap_strings(char** a, char** b) {
-    char *t = *a;
-    *a = *b;
-    *b = t;
-}
-
-void swap_ints(int *a, int *b) {
-    int t = *a;
-    *a = *b;
-    *b = t;
-}
 
 /*
 Description:
@@ -162,24 +160,20 @@ Args:
     int highIndex - upper bound index for sort;
 Return:
     returns the array index for quicksort partition */
-int partition (float *arr, char **stringVals, int *selected, int *appeared, int lowIndex, int highIndex) {
-    float pivot = arr[highIndex];    // pivot
+int partition (element_t **arr, int lowIndex, int highIndex) {
+    element_t *pivot = arr[highIndex];    // pivot
+    float pivot_fraction = (float) pivot->selected / (float) pivot->appeared;
     int i = (lowIndex - 1);  // Index of smaller element
 
     for (int j = lowIndex; j <= highIndex - 1; j++) {
         // If current element is smaller than the pivot
-        if (arr[j] > pivot) {
+        float j_fraction = (float) arr[j]->selected / (float) arr[j]->appeared;
+        if (j_fraction > pivot_fraction) {
             i++;    // increment index of smaller element
             swap(&arr[i], &arr[j]);
-            swap_ints(&selected[i], &selected[j]);
-            swap_ints(&appeared[i], &appeared[j]);
-            swap_strings(&stringVals[i], &stringVals[j]);
         }
     }
     swap(&arr[i + 1], &arr[highIndex]);
-    swap_ints(&selected[i + 1], &selected[highIndex]);
-    swap_ints(&appeared[i + 1], &appeared[highIndex]);
-    swap_strings(&stringVals[i+1], &stringVals[highIndex]);
     return (i + 1);
 }
 
@@ -196,16 +190,14 @@ Return:
     *arr and *stringVals are modified in place; the float array is sorted by value and
     the an equivilant spaw for the string array is performed every time a float is sawpped
     i.e. the strings are sorted based on the values of the floats in thier associated index */
-void quickSort(float *arr, char **stringVals, int *selected, int *appeared, int lowIndex, int highIndex) {
+void quickSort(element_t **arr, int lowIndex, int highIndex) {
     if (lowIndex < highIndex) {
-        /* pi is partitioning index, arr[p] is now
-           at right place */
-        int partition_index = partition(arr, stringVals, selected, appeared, lowIndex, highIndex);
 
-        // Separately sort elements before
-        // partition and after partition
-        quickSort(arr, stringVals, selected, appeared, lowIndex, partition_index - 1);
-        quickSort(arr, stringVals, selected, appeared, partition_index + 1, highIndex);
+        int partition_index = partition(arr, lowIndex, highIndex);
+
+        // Separately sort elements before and after partition
+        quickSort(arr, lowIndex, partition_index - 1);
+        quickSort(arr, partition_index + 1, highIndex);
     }
 }
 
@@ -219,208 +211,257 @@ Args:
 Return:
     void; */
 
-void rank(int *selected, int *appeared, char **elements, int elementCount, bool print_frequencies, int longest_string) {
-    float selectedPercent[elementCount];
+void sortElements(element_t **e, int elementCount) {
+    quickSort(e, 0, elementCount - 1);
+}
 
-    for(int i = 0; i < elementCount; i++) {
-        selectedPercent[i] = (float)selected[i] / (float)appeared[i];
-    }
-    quickSort(selectedPercent, elements, selected, appeared, 0, elementCount - 1);
+void printElements(element_t **e, int elementCount, bool print_frequencies, int longest_string) {
 
+    int total_trials = 0;
     for(int i = 0; i < elementCount; i++) {
+        total_trials += e[i]->appeared;
         if(print_frequencies) {
-            printf("%2d) %-*s %d/%d\n", i + 1, longest_string, elements[i], selected[i], appeared[i]);
+            printf("%02d) %-*s %3d/%-3d\n", i + 1, longest_string, e[i]->element, e[i]->selected, e[i]->appeared);
         } else {
-            printf("%2d) %s\n", i + 1, elements[i]);
+            printf("%02d) %s\n", i + 1, e[i]->element);
+        }
+    }
+    printf("results over %d trials\n", total_trials/2);
+}
+
+int getFlags(int argc, char **argv, char **flags) {
+    int flag_counter = 0;
+    for(int i = 1; argv[i][0] == '-'; i++) {
+        flags[i-1] = argv[i];
+        flag_counter++;
+    }
+    return flag_counter;
+}
+
+void getFiles(int argc, char **argv, int nFlags, FILE **inputfile, FILE **saveFile) {
+    if(argc == 1 + nFlags) { //has to get a file to rank.
+        *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+    } else
+    if(argc == 2 + nFlags) {
+        *inputfile = fopen(argv[nFlags + 1], "r");
+        if(*inputfile == NULL) {
+            printf("could not open that file");
+            *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+        }
+    } else
+    if(argc == 3 + nFlags) {
+        *inputfile = fopen(argv[nFlags + 1], "r");
+        if(inputfile == NULL) {
+            printf("%s\n", "The file you entered for input could not be opened:\n");
+            *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+        }
+        *saveFile = fopen(argv[nFlags + 2], "r");
+        if(*saveFile == NULL) {
+            printf("%s\n", "the file you entered for save could not be opened:\n");
+            *saveFile = promtFile("r", "please enter a save value containing a valid save");
         }
     }
 }
 
-
-int main(int argc, char **argv) {
-
-    FILE *inputfile, *saveFile = NULL;
-    int first_file = 1;
-    bool print_frequencies = false;
-
-    if(argc == 1) { //has to get a file to rank.
-        inputfile = promtFile("r");
-    } else if(strcmp(argv[1], "-f") == 0) {
-        first_file = 2;
-        print_frequencies = true;
+element_t** initElementArray(int nElements) {
+    element_t **elements = (element_t **)malloc(nElements * sizeof(element_t *));
+    for(int i = 0; i < nElements; i++) {
+        elements[i] = initElement();
     }
+    return elements;
+}
 
-    if(argc == first_file + 2) {
-        inputfile = fopen(argv[first_file], "r");
-        if(inputfile == NULL) {
-            printf("%s\n", "could not open the input file");
-            inputfile = promtFile("r");
-        }
-        saveFile = fopen(argv[first_file + 1], "r");
-        if(saveFile == NULL) {
-            printf("%s\n", "could not find the save file");
-            saveFile = promtFile("r");
-        }
-    } else if(argc == first_file + 1) {
-        inputfile = fopen(argv[first_file], "r");
-        if(inputfile == NULL) {
-            printf("could not open that file");
-            inputfile = promtFile("r");
-        }
-    } else {
-        fprintf(stderr, "%s\n", "invalid number of command line arguments");
+void freeElementArray(element_t **elements, int nElements) {
+    for(int i = 0; i < nElements; i++) {
+        freeElement(elements[i]);
     }
+    free(elements);
+}
 
-    int elementCount = countLines(inputfile);
-
-    char **elements = (char **)malloc(elementCount * sizeof(char *));
-    int *timesAppeared = (int *)malloc(elementCount * sizeof(int));
-    int *timesSelected = (int *)malloc(elementCount * sizeof(int));
-
+bool readDataFromSaveFile(element_t **elements, int nElements, FILE *saveFile) {
     char *line = NULL;
     size_t nLine;
-    int lineLength;
+    int lineLength, nLines;
 
-    if(saveFile != NULL) {
-        int numLines = 0;
-        char *selected, *appeared;
-        while((lineLength = getline(&line, &nLine, saveFile)) != -1 && numLines < elementCount) {
-            line[lineLength - 1] = '\0';
-            selected = strtok(line, "/");
-            timesSelected[numLines] = atoi(selected);
-            appeared = strtok(NULL, "/");
-            timesAppeared[numLines] = atoi(appeared);
-            numLines++;
-        }
-        if(numLines != elementCount){
-            fprintf(stderr, "%s\n", "invalid save file");
-            exit(1);
-        }
-        fclose(saveFile);
-    } else {
-        for(int i = 0; i < elementCount; i++) {
-            timesAppeared[i] = 0;
-            timesSelected[i] = 0;
-        }
+    nLines = countLines(saveFile);
+    if(nLines != nElements)
+        return false;
+    nLines = 0;
+
+    while((lineLength = getline(&line, &nLine, saveFile)) != -1 && nLines < nElements) {
+        line[lineLength - 1] = '\0';
+        elements[nLines]->selected = atoi(strtok(line, "/"));
+        elements[nLines]->appeared = atoi(strtok(NULL, "/"));
+
+        nLines++;
     }
+    free(line);
+    return true;
+}
 
-    if(!elements || !timesAppeared || !timesSelected) {
-        fprintf(stderr, "%s\n", "malloc failed");
-        exit(1);
-    }
+int readDataFromInputFile(element_t **elements, int nElements, FILE *file) {
+    char *element_string, *line = NULL;
+    size_t nLine;
+    int lineLength, longest_string = 0, pos = 0;
 
-    rewind(inputfile);
-
-    int pos = 0;
-    char *element;
-
-    int longest_string = 0; //used for formatted printing
-    while((lineLength = getline(&line, &nLine, inputfile)) >= 0) {
+    while((lineLength = getline(&line, &nLine, file)) >= 0) {
         if((lineLength == 2 && line[0] == '\r') || lineLength == 1) {
             continue;
         } else {
             if(lineLength >= longest_string)
                 longest_string = lineLength;
+
             line[lineLength - 1] = '\0';
             if(line[lineLength - 2] == '\r')
                 line[lineLength - 2] = '\0';
-            asprintf(&element, "%s", line);
-            elements[pos] = element;
+
+            asprintf(&element_string, "%s", line);
+            elements[pos]->element = element_string;
             pos++;
         }
     }
-    fclose(inputfile);
-    srand(time(0)); //initialize the random seed
+    return longest_string;
+}
 
-    int choice1, choice2;
-    for( ; ; ) {
-        choice1 = random_at_most(elementCount - 1);
-        choice2 = random_at_most(elementCount - 1);
-        bool running = true;
+void parseFlags(char** flags, int nFlags, bool *fFlag, bool *aFlag) {
+    for(int i = 0; i < nFlags; i++) {
+        switch(flags[i][1]) {
+            case 'f':
+                *fFlag = true;
+                break;
+            case 'a':
+                *aFlag = true;
+                break;
+            default:
+                fprintf(stderr, "invalid flag %s used\n", flags[i]);
+                exit(1);
+        }
+    }
+}
 
-        if(choice1 == choice2) {
+void generateOptions(element_t **elements, int nElements, int *choice1, int *choice2) {
+    *choice1 = random_at_most(nElements - 1);
+    while ((*choice2 = random_at_most(nElements - 1)) == *choice1) {
+        ;
+    }
+}
+
+void printOptions(element_t **elements, int choice1, int choice2) {
+    printf("%s %s\n", "1) ", elements[choice1]->element);
+    printf("%s %s\n", "2) ", elements[choice2]->element);
+}
+
+void writeDataToSaveFile(element_t **elements, int nElements, FILE *file) {
+    for(int i = 0; i < nElements; i++){
+        fprintf(file, "%d/%d\n", elements[i]->selected, elements[i]->appeared);
+    }
+}
+
+char getValidResponse(char *characterSet) {
+    char *line = NULL;
+    size_t nLine;
+    int lineLength;
+
+    while(printf("> ") && (lineLength = getline(&line, &nLine, stdin)) != -1) {
+        if(lineLength != 2) {
             continue;
         }
 
-        printf("%s %s\n", "1)", elements[choice1]);
-        printf("%s %s\n", "2)", elements[choice2]);
-        printf("> ");
-
-        while((lineLength = getline(&line, &nLine, stdin)) != -1) {
-            line[lineLength - 1] = '\0';
-            if(lineLength != 2) {
-                printf("> ");
-                continue;
+        for(int i = 0; characterSet[i] != '\0'; i++) {
+            if(characterSet[i] == line[0]){
+                char ret = line[0];
+                free(line);
+                return ret;
             }
+        }
+    }
+    return '\0';
+}
 
-            if(line[0] == '1'){
-                timesSelected[choice1]++;
+int main(int argc, char **argv) {
+
+    FILE *inputfile = NULL, *saveFile = NULL;
+    char inputCharacterSet[] = {'1','2','q','s','\0'};
+    char quitCharacterSet[] = {'y','n','\0'};
+    char *flags[argc];
+    bool fFlag = false, aFlag = false, isReadSuccess;
+    int nElements, nFlags, longest_string, counter = 0;
+    element_t **elements;
+
+    nFlags = getFlags(argc, argv, flags);
+    parseFlags(flags, nFlags, &fFlag, &aFlag);
+    getFiles(argc, argv, nFlags, &inputfile, &saveFile);
+
+    nElements = countLines(inputfile);
+    elements = initElementArray(nElements);
+
+    if(saveFile != NULL) {
+        isReadSuccess = readDataFromSaveFile(elements, nElements, saveFile);
+        if(!isReadSuccess) {
+            freeElementArray(elements, nElements);
+            fprintf(stderr, "invalid number of elements in save file -- expexed: %d lines\n", nElements);
+            return EXIT_FAILURE;
+        }
+        fclose(saveFile);
+    }
+
+    longest_string = readDataFromInputFile(elements, nElements, inputfile);
+    fclose(inputfile);
+
+    srand(time(0)); //initialize the random seed
+
+    int choice1, choice2;
+    bool running = true;
+
+    while(running) {
+        if(aFlag){
+            if(counter % 10 == 9) {
+                printf("%s\n", "autosaving . . .");
+                saveFile = fopen(argv[nFlags + 2], "w");
+                writeDataToSaveFile(elements, nElements, saveFile);
+                fclose(saveFile);
+            }
+        }
+
+        generateOptions(elements, nElements, &choice1, &choice2);
+        printOptions(elements, choice1, choice2);
+
+        char input = getValidResponse(inputCharacterSet);
+
+        switch(input){
+            case '1':
+                elements[choice1]->selected++;
                 break;
-            }
-
-            else if(line[0] == '2'){
-                timesSelected[choice2]++;
+            case '2':
+                elements[choice2]->selected++;
                 break;
-            }
-
-            else if(line[0] == 'q') {
-                running = false;
-                printf("%s\n", "do you want to save? y/n");
-                while((lineLength = getline(&line, &nLine, stdin)) != -1) {
-                    if(lineLength != 2)
-                        continue;
-                    if(line[0] == 'y') {
-                        saveFile = promtFile("w");
-                        for(int i = 0; i < elementCount; i++){
-                            fprintf(saveFile, "%d/%d\n", timesSelected[i], timesAppeared[i]);
-                        }
-                        break;
-                    } else if(line[0] == 'n') {
-                        break;
-                    } else {
-                        printf("%s\n", "please enter a valid response");
-                    }
-                }
-                break;
-            }
-
-            else if(line[0] == 's') {
-                saveFile = promtFile("w");
-                for(int i = 0; i < elementCount; i++){
-                    fprintf(saveFile, "%d/%d\n", timesSelected[i], timesAppeared[i]);
-                }
+            case 's':
+                saveFile = promtFile("w", "please input the file where you'd like to save the results");
+                writeDataToSaveFile(elements, nElements, saveFile);
                 fclose(saveFile);
                 break;
-            }
-
-            printf("> ");
+            case 'q':
+                running = false;
+                printf("Would you like to save the results of your current session? [y/n]\n");
+                char toSave = getValidResponse(quitCharacterSet);
+                if(toSave == 'y') {
+                    saveFile = promtFile("w", "please input the file where you'd like to save the results");
+                    writeDataToSaveFile(elements, nElements, saveFile);
+                    fclose(saveFile);
+                }
+                break;
         }
-        if(!running) {
-            break;
+        if(running) {
+            elements[choice1]->appeared++;
+            elements[choice2]->appeared++;
         }
-
-
-        timesAppeared[choice1]++;
-        timesAppeared[choice2]++;
+        counter++;
     }
 
-    //
-    rank(timesSelected, timesAppeared, elements, elementCount, print_frequencies, longest_string);
-    int total_trials = 0;
-    for(int i = 0; i < elementCount; i++) {
-        total_trials += timesAppeared[i];
-    }
-    total_trials = total_trials/2;
-    printf("results for %d trials\n", total_trials);
+    sortElements(elements, nElements);
+    printElements(elements, nElements, fFlag, longest_string);
 
-    //free all memeory
-    free(line);
-    for(int i = 0; i < elementCount; i++) {
-        free(elements[i]);
-    }
-    free(elements);
-    free(timesAppeared);
-    free(timesSelected);
+    freeElementArray(elements, nElements);
 
     return EXIT_SUCCESS;
 }
