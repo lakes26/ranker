@@ -141,20 +141,28 @@ void swap_strings(char** a, char** b) {
     *b = t;
 }
 
+void swap_ints(int *a, int *b) {
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
+
 /*
 Description:
     Utility for quicksort - determines the array index on which to partition quicksort.
-    swaps floats and strings to appropriate sorted posistions.
-    strings are sorted based on the float in the associated index of arr.
+    swaps all arrays to appropriate sorted posistions.
+    strings and other integers are sorted based on the float in the associated index of arr.
     last element is used as the splitter.
 Args:
     float *arr - array of float elements to be partitioned.
     char **stringVals - array of strings associated with the float *arr.
+    int *selected - array of ints associated with the amount of times the elements were selected
+    int *appeared - array of ints associated with the amount of times the elements appeared
     int lowIndex - lower bound index for sort;
     int highIndex - upper bound index for sort;
 Return:
     returns the array index for quicksort partition */
-int partition (float *arr, char **stringVals, int lowIndex, int highIndex) {
+int partition (float *arr, char **stringVals, int *selected, int *appeared, int lowIndex, int highIndex) {
     float pivot = arr[highIndex];    // pivot
     int i = (lowIndex - 1);  // Index of smaller element
 
@@ -163,11 +171,14 @@ int partition (float *arr, char **stringVals, int lowIndex, int highIndex) {
         if (arr[j] > pivot) {
             i++;    // increment index of smaller element
             swap(&arr[i], &arr[j]);
+            swap_ints(&selected[i], &selected[j]);
+            swap_ints(&appeared[i], &appeared[j]);
             swap_strings(&stringVals[i], &stringVals[j]);
-
         }
     }
     swap(&arr[i + 1], &arr[highIndex]);
+    swap_ints(&selected[i + 1], &selected[highIndex]);
+    swap_ints(&appeared[i + 1], &appeared[highIndex]);
     swap_strings(&stringVals[i+1], &stringVals[highIndex]);
     return (i + 1);
 }
@@ -185,16 +196,16 @@ Return:
     *arr and *stringVals are modified in place; the float array is sorted by value and
     the an equivilant spaw for the string array is performed every time a float is sawpped
     i.e. the strings are sorted based on the values of the floats in thier associated index */
-void quickSort(float *arr, char **stringVals, int lowIndex, int highIndex) {
+void quickSort(float *arr, char **stringVals, int *selected, int *appeared, int lowIndex, int highIndex) {
     if (lowIndex < highIndex) {
         /* pi is partitioning index, arr[p] is now
            at right place */
-        int partition_index = partition(arr, stringVals, lowIndex, highIndex);
+        int partition_index = partition(arr, stringVals, selected, appeared, lowIndex, highIndex);
 
         // Separately sort elements before
         // partition and after partition
-        quickSort(arr, stringVals, lowIndex, partition_index - 1);
-        quickSort(arr, stringVals, partition_index + 1, highIndex);
+        quickSort(arr, stringVals, selected, appeared, lowIndex, partition_index - 1);
+        quickSort(arr, stringVals, selected, appeared, partition_index + 1, highIndex);
     }
 }
 
@@ -208,15 +219,20 @@ Args:
 Return:
     void; */
 
-void rank(int *selected, int *appeared, char **elements, int elementCount) {
+void rank(int *selected, int *appeared, char **elements, int elementCount, bool print_frequencies, int longest_string) {
     float selectedPercent[elementCount];
 
     for(int i = 0; i < elementCount; i++) {
         selectedPercent[i] = (float)selected[i] / (float)appeared[i];
     }
-    quickSort(selectedPercent, elements, 0, elementCount - 1);
+    quickSort(selectedPercent, elements, selected, appeared, 0, elementCount - 1);
+
     for(int i = 0; i < elementCount; i++) {
-        printf("%d) %s\n", i + 1, elements[i]);
+        if(print_frequencies) {
+            printf("%2d) %-*s %d/%d\n", i + 1, longest_string, elements[i], selected[i], appeared[i]);
+        } else {
+            printf("%2d) %s\n", i + 1, elements[i]);
+        }
     }
 }
 
@@ -224,22 +240,29 @@ void rank(int *selected, int *appeared, char **elements, int elementCount) {
 int main(int argc, char **argv) {
 
     FILE *inputfile, *saveFile = NULL;
+    int first_file = 1;
+    bool print_frequencies = false;
 
     if(argc == 1) { //has to get a file to rank.
         inputfile = promtFile("r");
-    } else if(argc == 3) {
-        inputfile = fopen(argv[1], "r");
+    } else if(strcmp(argv[1], "-f") == 0) {
+        first_file = 2;
+        print_frequencies = true;
+    }
+
+    if(argc == first_file + 2) {
+        inputfile = fopen(argv[first_file], "r");
         if(inputfile == NULL) {
             printf("%s\n", "could not open the input file");
             inputfile = promtFile("r");
         }
-        saveFile = fopen(argv[2], "r");
+        saveFile = fopen(argv[first_file + 1], "r");
         if(saveFile == NULL) {
             printf("%s\n", "could not find the save file");
             saveFile = promtFile("r");
         }
-    } else if(argc == 2) {
-        inputfile = fopen(argv[1], "r");
+    } else if(argc == first_file + 1) {
+        inputfile = fopen(argv[first_file], "r");
         if(inputfile == NULL) {
             printf("could not open that file");
             inputfile = promtFile("r");
@@ -291,11 +314,16 @@ int main(int argc, char **argv) {
     int pos = 0;
     char *element;
 
+    int longest_string = 0; //used for formatted printing
     while((lineLength = getline(&line, &nLine, inputfile)) >= 0) {
         if((lineLength == 2 && line[0] == '\r') || lineLength == 1) {
             continue;
         } else {
+            if(lineLength >= longest_string)
+                longest_string = lineLength;
             line[lineLength - 1] = '\0';
+            if(line[lineLength - 2] == '\r')
+                line[lineLength - 2] = '\0';
             asprintf(&element, "%s", line);
             elements[pos] = element;
             pos++;
@@ -377,7 +405,7 @@ int main(int argc, char **argv) {
     }
 
     //
-    rank(timesSelected, timesAppeared, elements, elementCount);
+    rank(timesSelected, timesAppeared, elements, elementCount, print_frequencies, longest_string);
     int total_trials = 0;
     for(int i = 0; i < elementCount; i++) {
         total_trials += timesAppeared[i];
