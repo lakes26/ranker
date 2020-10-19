@@ -7,35 +7,65 @@
 #include<time.h>
 #include<ctype.h>
 
+
+/*
+Description:
+    promts files from stdin until it receives a valid file
+Args:
+    char *r_or_w, a string of length 1 that is either "r" of "w"
+    specifying weather the file is to be opened in read mode or write mode
+Returns:
+    An open file pointer to the user inputed file */
 FILE *promtFile(char *r_or_w) {
+    //declare promt message;
+    char *message = "please specify a file";
+
+    //error checking input;
+    if(strcmp(r_or_w, "r") != 0 && strcmp(r_or_w, "w") != 0) {
+        fprintf(stderr, "%s\n", "invalid argument to promtFile()");
+        exit(1);
+    }
+
     char *line = NULL;
     size_t nLine;
     int lineLength;
     FILE *inputfile;
 
-    printf("%s\n", "please specify a file:");
+    //print promt message
+    printf("%s\n", message);
 
+    //loop until it receives a valid file.
     for( ; ; ) {
         printf("%s ", ">");
 
+        line = NULL;
         lineLength = getline(&line, &nLine, stdin);
 
+        //check for the end of stdin
         if(lineLength <= 0) {
-            printf("no input file found on stdin");
+            printf("no file found on stdin");
+            free(line);
             exit(0);
-        }
-        else {
+        } else {
             line[lineLength - 1] = '\0'; //set the newline to null so that fopen works properly
             inputfile = fopen(line, r_or_w);
+            free(line);
+            //check whether fopen succeded
             if(inputfile == NULL)
                 printf("%s\n", "could not open that file");
-            else {
+            else
                 return inputfile;
-            }
         }
     }
 }
 
+/*
+Description:
+    Produces a random long in a specified range
+Args:
+    long max - the maximum value that the function can return.
+Return:
+    a random value within that range */
 long random_at_most(long max) {
   unsigned long
     // max <= RAND_MAX < ULONG_MAX.
@@ -55,9 +85,13 @@ long random_at_most(long max) {
   return x/bin_size;
 }
 
-//passed in an already open file pointer
-//returns the number of lines in the file
-//does not close the file
+/*
+Description:
+    counts the number of lines in a file.
+Args:
+    FILE *file - the file from which to have newlines counted
+Return:
+    int - number of newlines found */
 int countLines(FILE *file) {
     char ch;
     char prevch = '\0';
@@ -79,18 +113,47 @@ int countLines(FILE *file) {
     return lineCount;
 }
 
+/*
+Description:
+    Swaps two float elements.
+Args:
+    float *a, memory address of float to be swapped
+    float *b, memory address of other float to be swapped.
+Return:
+    void */
 void swap(float* a, float* b) {
     float t = *a;
     *a = *b;
     *b = t;
 }
 
+/*
+Description:
+    Swaps two string elements.
+Args:
+    char **a, memory address of string to be swapped
+    char **b, memory address of other string to be swapped.
+Return:
+    void */
 void swap_strings(char** a, char** b) {
     char *t = *a;
     *a = *b;
     *b = t;
 }
 
+/*
+Description:
+    Utility for quicksort - determines the array index on which to partition quicksort.
+    swaps floats and strings to appropriate sorted posistions.
+    strings are sorted based on the float in the associated index of arr.
+    last element is used as the splitter.
+Args:
+    float *arr - array of float elements to be partitioned.
+    char **stringVals - array of strings associated with the float *arr.
+    int lowIndex - lower bound index for sort;
+    int highIndex - upper bound index for sort;
+Return:
+    returns the array index for quicksort partition */
 int partition (float *arr, char **stringVals, int lowIndex, int highIndex) {
     float pivot = arr[highIndex];    // pivot
     int i = (lowIndex - 1);  // Index of smaller element
@@ -109,6 +172,19 @@ int partition (float *arr, char **stringVals, int lowIndex, int highIndex) {
     return (i + 1);
 }
 
+/*
+Description:
+    Recursively performs the quicksort algorithm
+Args:
+    float *arr - array of float elements to be partitioned.
+    char **stringVals - array of strings associated with the float *arr.
+    int lowIndex - lower bound index for sort;
+    int highIndex - upper bound index for sort;
+Return:
+    void;
+    *arr and *stringVals are modified in place; the float array is sorted by value and
+    the an equivilant spaw for the string array is performed every time a float is sawpped
+    i.e. the strings are sorted based on the values of the floats in thier associated index */
 void quickSort(float *arr, char **stringVals, int lowIndex, int highIndex) {
     if (lowIndex < highIndex) {
         /* pi is partitioning index, arr[p] is now
@@ -122,8 +198,18 @@ void quickSort(float *arr, char **stringVals, int lowIndex, int highIndex) {
     }
 }
 
+/*
+Description:
+    Creates the ranked_list and prints it to standard out.
+Args:
+    int *selected - array containing number of times elements were selected
+    int *appeared - array containing number of times elements appered
+    int elementCount - the number of total elements.
+Return:
+    void; */
+
 void rank(int *selected, int *appeared, char **elements, int elementCount) {
-    float *selectedPercent = (float *)malloc(elementCount * sizeof(float));
+    float selectedPercent[elementCount];
 
     for(int i = 0; i < elementCount; i++) {
         selectedPercent[i] = (float)selected[i] / (float)appeared[i];
@@ -132,8 +218,8 @@ void rank(int *selected, int *appeared, char **elements, int elementCount) {
     for(int i = 0; i < elementCount; i++) {
         printf("%d) %s\n", i + 1, elements[i]);
     }
-
 }
+
 
 int main(int argc, char **argv) {
 
@@ -215,6 +301,7 @@ int main(int argc, char **argv) {
             pos++;
         }
     }
+    fclose(inputfile);
     srand(time(0)); //initialize the random seed
 
     int choice1, choice2;
@@ -274,6 +361,7 @@ int main(int argc, char **argv) {
                 for(int i = 0; i < elementCount; i++){
                     fprintf(saveFile, "%d/%d\n", timesSelected[i], timesAppeared[i]);
                 }
+                fclose(saveFile);
                 break;
             }
 
@@ -283,10 +371,12 @@ int main(int argc, char **argv) {
             break;
         }
 
+
         timesAppeared[choice1]++;
         timesAppeared[choice2]++;
     }
 
+    //
     rank(timesSelected, timesAppeared, elements, elementCount);
     int total_trials = 0;
     for(int i = 0; i < elementCount; i++) {
@@ -294,6 +384,15 @@ int main(int argc, char **argv) {
     }
     total_trials = total_trials/2;
     printf("results for %d trials\n", total_trials);
+
+    //free all memeory
+    free(line);
+    for(int i = 0; i < elementCount; i++) {
+        free(elements[i]);
+    }
+    free(elements);
+    free(timesAppeared);
+    free(timesSelected);
 
     return EXIT_SUCCESS;
 }
