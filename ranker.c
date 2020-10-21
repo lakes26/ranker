@@ -673,6 +673,7 @@ int main(int argc, char **argv) {
         counter++;
     }
 
+    //once we stop ranking perfrom the following:
     sortElements(elements, nElements);
     printElements(elements, nElements, fFlag, longestString);
 
