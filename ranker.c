@@ -663,7 +663,8 @@ int main(int argc, char **argv) {
                 }
                 break;
         }
-        if(running) {
+        //we don't want to increment if the user did not rank.
+        if(input == 'q' || input == 's') {
             elements[choice1]->appeared++;
             elements[choice2]->appeared++;
         }
