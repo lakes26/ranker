@@ -597,12 +597,12 @@ int main(int argc, char **argv) {
 
     nElements = countLines(inputfile);
 
+    //program exits if initElementArray fails
     elements = initElementArray(nElements);
-    if(elements == NULL)
-        return EXIT_FAILURE;
 
     if(saveFile != NULL) {
         isReadSuccess = readDataFromSaveFile(elements, nElements, saveFile);
+        //if failure we free memeory and exit
         if(!isReadSuccess) {
             freeElementArray(elements, nElements);
             fprintf(stderr, "invalid number of elements in save file\
@@ -615,12 +615,14 @@ int main(int argc, char **argv) {
     longestString = readDataFromInputFile(elements, nElements, inputfile);
     fclose(inputfile);
 
-    srand(time(0)); //initialize the random seed
+     //initialize the random seed using system time
+    srand(time(0));
 
     int choice1, choice2;
     bool running = true;
 
     while(running) {
+        //autosave every ten times if the -a flag is specified
         if(aFlag){
             if(counter % 10 == 9) {
                 printf("%s\n", "autosaving . . .");
