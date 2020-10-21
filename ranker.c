@@ -13,27 +13,50 @@ typedef struct {
     int appeared;
 } element_t;
 
+/* Function: initElement
+ * ---------------------
+ * Allocates memory for an element_t and initializes it's values to default
+ *
+ * returns: a pointer to an initialized element_t or NULL if malloc fails
+ */
 element_t *initElement() {
     element_t *e = (element_t *)malloc(sizeof(element_t));
+    if(e == NULL) {
+        fprintf(stderr, "%s\n", "malloc Failed: could not create a\
+            new element_t");
+        return NULL;
+    }
     e->element = NULL;
     e->selected = 0;
     e->appeared = 0;
     return e;
 }
 
+/* Function: freeElement
+ * ---------------------
+ * Frees all memory associated with an element_t pointer
+ *
+ * e: a pointer to an element struct allocated on the heap
+ */
 void freeElement(element_t *e) {
     free(e->element);
     free(e);
 }
 
-/*
-Description:
-    promts files from stdin until it receives a valid file
-Args:
-    char *r_or_w, a string of length 1 that is either "r" of "w"
-    specifying weather the file is to be opened in read mode or write mode
-Returns:
-    An open file pointer to the user inputed file */
+
+/* Function: promtFile
+ * ---------------------
+ * Promts a file from stdin until a valid file is received
+ *
+ * r_or_w: A char * that either holds one of the two values:
+ *         "r": specifying the file should be opened in read mode.
+ *         "w": specifying the file should be opened in write mode.
+ *
+ * message: The message printed to standard out before the function
+ *          begins promting for lines from stdin.
+ *
+ * returns: An open FILE pointer for the user inputted file.
+ */
 FILE *promtFile(char *r_or_w, char *message) {
 
     //error checking input, user should never input non s or w;
@@ -59,11 +82,12 @@ FILE *promtFile(char *r_or_w, char *message) {
 
         //check for the end of stdin
         if(lineLength <= 0) {
-            printf("no file found on stdin");
+            printf("%s\n", "no file found on stdin");
             free(line);
             exit(0);
         } else {
-            line[lineLength - 1] = '\0'; //set the newline to null so that fopen works properly
+            //set the newline to null so that fopen works properly
+            line[lineLength - 1] = '\0';
             inputfile = fopen(line, r_or_w);
             free(line);
             //check whether fopen succeded
@@ -75,14 +99,15 @@ FILE *promtFile(char *r_or_w, char *message) {
     }
 }
 
-/*
-Description:
-    Produces a random long in a specified range
-Args:
-    long max - the maximum value that the function can return.
-Return:
-    a random value within that range */
-long random_at_most(long max) {
+/* Function: randomAtMost
+ * ---------------------
+ * Generates a random long below a certain value
+ *
+ * max: The maximum value possible for the randomly generated long.
+ *
+ * returns: a random long <= max.
+ */
+long randomAtMost(long max) {
   unsigned long
     // max <= RAND_MAX < ULONG_MAX.
     num_bins = (unsigned long) max + 1,
@@ -101,17 +126,17 @@ long random_at_most(long max) {
   return x/bin_size;
 }
 
-/*
-Description:
-    counts the number of lines in a file.
-Args:
-    FILE *file - the file from which to have newlines counted
-Return:
-    int - number of newlines found */
+/* Function: countLines
+ * ---------------------
+ * Counts the number of lines in a file ignoring lines that are blank.
+ * Tollerant to newline representations of "\n" and "\r\n"
+ *
+ * file: An open FILE pointer to the file where the newlines will be counted
+ *
+ * returns: A integer holding the number of non-empty lines found.
+ */
 int countLines(FILE *file) {
-    char ch;
-    char prevch = '\0';
-    char secondprevch = '\0';
+    char ch, prevch = '\0', secondprevch = '\0';
     int lineCount = 0;
 
     while((ch = fgetc(file)) != EOF) {
@@ -130,14 +155,16 @@ int countLines(FILE *file) {
     return lineCount;
 }
 
-/*
-Description:
-    Swaps two float elements.
-Args:
-    float *a, memory address of float to be swapped
-    float *b, memory address of other float to be swapped.
-Return:
-    void */
+/* Function: swap
+ * ---------------------
+ * Swaps two element_t pointers"
+ *
+ * a: The memory address of the first element_t pointer to be swapped.
+ *
+ * b: The memory address of the second element_t pointer to be swapped.
+ *
+ * returns: A integer holding the number of non-empty lines found.
+ */
 void swap(element_t** a, element_t** b) {
     element_t *t = *a;
     *a = *b;
@@ -145,21 +172,21 @@ void swap(element_t** a, element_t** b) {
 }
 
 
-/*
-Description:
-    Utility for quicksort - determines the array index on which to partition quicksort.
-    swaps all arrays to appropriate sorted posistions.
-    strings and other integers are sorted based on the float in the associated index of arr.
-    last element is used as the splitter.
-Args:
-    float *arr - array of float elements to be partitioned.
-    char **stringVals - array of strings associated with the float *arr.
-    int *selected - array of ints associated with the amount of times the elements were selected
-    int *appeared - array of ints associated with the amount of times the elements appeared
-    int lowIndex - lower bound index for sort;
-    int highIndex - upper bound index for sort;
-Return:
-    returns the array index for quicksort partition */
+/* Function: partition
+ * ---------------------
+ * Utilty function called by quicksort. Performs the partitioning of the array
+ *
+ * arr: an array of element_t pointers to be sorted.
+ *
+ * lowIndex: specifies that no elements in indicies lower than this value will
+ *           be sorted.
+ *
+ * highIndex: specifies that no elements in indicies higher than this value
+ *            will be sorted.
+ *
+ * returns: A integer holding the number the index on which the array was
+ *          Partitioned.
+ */
 int partition (element_t **arr, int lowIndex, int highIndex) {
     element_t *pivot = arr[highIndex];    // pivot
     float pivot_fraction = (float) pivot->selected / (float) pivot->appeared;
@@ -177,19 +204,20 @@ int partition (element_t **arr, int lowIndex, int highIndex) {
     return (i + 1);
 }
 
-/*
-Description:
-    Recursively performs the quicksort algorithm
-Args:
-    float *arr - array of float elements to be partitioned.
-    char **stringVals - array of strings associated with the float *arr.
-    int lowIndex - lower bound index for sort;
-    int highIndex - upper bound index for sort;
-Return:
-    void;
-    *arr and *stringVals are modified in place; the float array is sorted by value and
-    the an equivilant spaw for the string array is performed every time a float is sawpped
-    i.e. the strings are sorted based on the values of the floats in thier associated index */
+/* Function: quickSort
+ * ---------------------
+ * Recursivley permorms the quick sort algorithm on a subsection of an array
+ *
+ * arr: an array of element_t pointers to be sorted. The list is modified
+ *      in place.
+ *
+ * lowIndex: specifies that no elements in indicies lower than this value will
+ *           be sorted.
+ *
+ * highIndex: specifies that no elements in indicies higher than this value
+ *            will be sorted.
+ *
+ */
 void quickSort(element_t **arr, int lowIndex, int highIndex) {
     if (lowIndex < highIndex) {
 
@@ -201,34 +229,65 @@ void quickSort(element_t **arr, int lowIndex, int highIndex) {
     }
 }
 
-/*
-Description:
-    Creates the ranked_list and prints it to standard out.
-Args:
-    int *selected - array containing number of times elements were selected
-    int *appeared - array containing number of times elements appered
-    int elementCount - the number of total elements.
-Return:
-    void; */
-
+/* Function: sortElements
+ * ---------------------
+ * Sorts the elements of an array of element_t pointer
+ *
+ * e: The array of element pointers to be sorted. e is sorted in place.
+ *
+ * elementCount: The number of elements in the array, e, to be sorted
+ *
+ */
 void sortElements(element_t **e, int elementCount) {
     quickSort(e, 0, elementCount - 1);
 }
 
-void printElements(element_t **e, int elementCount, bool print_frequencies, int longest_string) {
+/* Function: printElements
+ * ---------------------
+ * Prints the string representation of the elements in a formatted manor
+ *
+ * e: The array of element pointers to print.
+ *
+ * elementCount: The number of elements in the array, e, to be printed
+ *
+ * printFrequencies: boolen specifying whether or not to print the frequencies
+ *                    that the elements were selected and appeared. Yes if true
+ *
+ * int longestString:  the longest string that will be printed. This value
+ *                      affected how the string is formated so that the
+ *                      frequencies can appear in the same collumn
+ */
+void printElements(element_t **e, int elementCount, bool printFrequencies,
+                    int longestString) {
 
     int total_trials = 0;
     for(int i = 0; i < elementCount; i++) {
         total_trials += e[i]->appeared;
-        if(print_frequencies) {
-            printf("%02d) %-*s %3d/%-3d\n", i + 1, longest_string, e[i]->element, e[i]->selected, e[i]->appeared);
+
+        if(printFrequencies) {
+            printf("%02d) %-*s %3d/%-3d\n", i + 1, longestString,
+                    e[i]->element, e[i]->selected, e[i]->appeared);
         } else {
             printf("%02d) %s\n", i + 1, e[i]->element);
         }
+
     }
     printf("results over %d trials\n", total_trials/2);
 }
 
+/* Function: getFlags
+ * ---------------------
+ * Searches the begining of the argument vector and creates an array of flags
+ * that appear in the command line arguments. Flags appear before file names.
+ *
+ * argc: The number of command line arguements input to the program.
+ *
+ * argv: The argument vector input to the program.
+ *
+ * flags: The array of (char *) pointers in which to store the flags.
+ *
+ * returns: The number of flags encountered by the function.
+ */
 int getFlags(int argc, char **argv, char **flags) {
     int flag_counter = 0;
     for(int i = 1; argv[i][0] == '-'; i++) {
@@ -238,39 +297,94 @@ int getFlags(int argc, char **argv, char **flags) {
     return flag_counter;
 }
 
-void getFiles(int argc, char **argv, int nFlags, FILE **inputfile, FILE **saveFile) {
-    if(argc == 1 + nFlags) { //has to get a file to rank.
-        *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+/* Function: getFiles
+ * ---------------------
+ * Attempts to open the files passed into the program on the command line. If
+ * any attempt is unsuccessful, it will promt for a file from stdin until a
+ * valid file is recieved
+ *
+ * argc: The number of command line arguements input to the program.
+ *
+ * argv: The argument vector input to the program.
+ *
+ * nFlags: The number of flags in the argument vector.
+ *
+ * inputFile: the memory address where the input file gets be stored.
+ *
+ * saveFile: the memory address where the save file gest stored.
+ */
+void getFiles(int argc, char **argv, int nFlags, FILE **inputfile,
+                FILE **saveFile) {
+
+    char *inputMessage =
+        "please enter an input file containing the elements to be ranked";
+    char *saveMessage =
+        "please enter a save value containing a valid save";
+    char *inputErrorMessage =
+        "The file you entered for input could not be opened";
+    char *saveErrorMessage =
+        "The file you entered for save could not be opened";
+
+    if(argc == 1 + nFlags) {
+        *inputfile = promtFile("r", inputMessage);
     } else
     if(argc == 2 + nFlags) {
         *inputfile = fopen(argv[nFlags + 1], "r");
         if(*inputfile == NULL) {
-            printf("could not open that file");
-            *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+            printf("%s\n", inputErrorMessage);
+            *inputfile = promtFile("r", inputMessage);
         }
     } else
     if(argc == 3 + nFlags) {
         *inputfile = fopen(argv[nFlags + 1], "r");
         if(inputfile == NULL) {
-            printf("%s\n", "The file you entered for input could not be opened:\n");
-            *inputfile = promtFile("r", "please enter an input file containing the elements to be ranked");
+            printf("%s\n", inputErrorMessage);
+            *inputfile = promtFile("r", inputMessage);
         }
         *saveFile = fopen(argv[nFlags + 2], "r");
         if(*saveFile == NULL) {
-            printf("%s\n", "the file you entered for save could not be opened:\n");
-            *saveFile = promtFile("r", "please enter a save value containing a valid save");
+            printf("%s\n", saveErrorMessage);
+            *saveFile = promtFile("r", saveMessage);
         }
     }
 }
 
+/* Function: initElementArray
+ * ---------------------
+ * Allocates memory for and element_t pointer array of specified size,
+ * and populates the array with initialized elements.
+ *
+ * nElements: The number of elements the array should hold.
+ *
+ * returns: the memory address of the allocted array.
+ */
 element_t** initElementArray(int nElements) {
-    element_t **elements = (element_t **)malloc(nElements * sizeof(element_t *));
+    element_t **elements = (element_t **)malloc(nElements*sizeof(element_t *));
+    if(elements == NULL) {
+        fprintf(stderr, "%s\n", "malloc failed in initElementArray");
+        return NULL;
+    }
     for(int i = 0; i < nElements; i++) {
         elements[i] = initElement();
+        if(elements[i] == NULL) {
+            for(int j = 0; j < i+1; j++)
+                freeElement(elements[j]);
+            free(elements);
+            return NULL;
+        }
     }
     return elements;
 }
 
+/* Function: freeElementArray
+ * ---------------------
+ * Frees memory allocated for the element_t pointer array and frees all memory
+ * associated with each element in the array.
+ *
+ * e: The element pointer array to be freed.
+ *
+ * nElements: The number of elements the array holds.
+ */
 void freeElementArray(element_t **elements, int nElements) {
     for(int i = 0; i < nElements; i++) {
         freeElement(elements[i]);
@@ -278,7 +392,22 @@ void freeElementArray(element_t **elements, int nElements) {
     free(elements);
 }
 
-bool readDataFromSaveFile(element_t **elements, int nElements, FILE *saveFile) {
+/* Function: readDataFromSaveFile
+ * ---------------------
+ * reads data of the form int,int\n from each line of the save file and
+ * assigns the fields slected and appeared those respective values for
+ * the structs in an element array
+ *
+ * elements: the array of element pointers to where the data will be read
+ *
+ * nElements: the number of elements in the element array
+ *
+ * saveFile: the file from which to read the data
+ *
+ * returns: true on success, false on failure. fails if the save file is of
+ *          invalid size for the number of elements.
+ */
+bool readDataFromSaveFile(element_t **elements, int nElements, FILE *saveFile){
     char *line = NULL;
     size_t nLine;
     int lineLength, nLines;
@@ -288,7 +417,9 @@ bool readDataFromSaveFile(element_t **elements, int nElements, FILE *saveFile) {
         return false;
     nLines = 0;
 
-    while((lineLength = getline(&line, &nLine, saveFile)) != -1 && nLines < nElements) {
+    while(( lineLength = getline(&line, &nLine, saveFile)) != -1 &&
+            nLines < nElements) {
+
         line[lineLength - 1] = '\0';
         elements[nLines]->selected = atoi(strtok(line, "/"));
         elements[nLines]->appeared = atoi(strtok(NULL, "/"));
@@ -299,17 +430,31 @@ bool readDataFromSaveFile(element_t **elements, int nElements, FILE *saveFile) {
     return true;
 }
 
+/* Function: readDataFromInputFile
+ * ---------------------
+ * reads data from an input file where each element appears on it's own
+ * line. Assigns the char * read for the line to the element field in each
+ * element_t in the element array.
+ *
+ * elements: the array of element pointers to where the data will be read
+ *
+ * nElements: the number of elements in the element array
+ *
+ * file: the file from which to read the data
+ *
+ * returns: the length of longest string read from the inputfile
+ */
 int readDataFromInputFile(element_t **elements, int nElements, FILE *file) {
     char *element_string, *line = NULL;
     size_t nLine;
-    int lineLength, longest_string = 0, pos = 0;
+    int lineLength, longestString = 0, pos = 0;
 
     while((lineLength = getline(&line, &nLine, file)) >= 0) {
         if((lineLength == 2 && line[0] == '\r') || lineLength == 1) {
             continue;
         } else {
-            if(lineLength >= longest_string)
-                longest_string = lineLength;
+            if(lineLength >= longestString)
+                longestString = lineLength;
 
             line[lineLength - 1] = '\0';
             if(line[lineLength - 2] == '\r')
@@ -320,9 +465,25 @@ int readDataFromInputFile(element_t **elements, int nElements, FILE *file) {
             pos++;
         }
     }
-    return longest_string;
+    return longestString;
 }
 
+
+/* Function: parseFalgs
+ * ---------------------
+ * searches the elements of an array of flags and assigns the boolean values of
+ * fFlag and aFlag to true if "-f" and/or -"a" appear respectivly.
+ *
+ * flags: the array of character pointers to where the flags are stored
+ *
+ * nFlags: the number of flags in the flags array
+ *
+ * fFlag: the memory address where the boolean indicating the presence of a "-f"
+ *        flag is stored.
+ *
+ * aFlag: the memory address where the boolean indicating the presence of a "-a"
+ *        flag is stored.
+ */
 void parseFlags(char** flags, int nFlags, bool *fFlag, bool *aFlag) {
     for(int i = 0; i < nFlags; i++) {
         switch(flags[i][1]) {
@@ -339,24 +500,66 @@ void parseFlags(char** flags, int nFlags, bool *fFlag, bool *aFlag) {
     }
 }
 
-void generateOptions(element_t **elements, int nElements, int *choice1, int *choice2) {
-    *choice1 = random_at_most(nElements - 1);
-    while ((*choice2 = random_at_most(nElements - 1)) == *choice1) {
+/* Function: generateOptions
+ * ---------------------
+ * Generates two unique random numbers at most nElements
+ *
+ * choice1: the memory address where one of the random numbers is stored
+ *
+ * choice2: the memory address where the other random number is stored
+ */
+void generateOptions(int nElements, int *choice1, int *choice2) {
+
+    *choice1 = randomAtMost(nElements - 1);
+    while ((*choice2 = randomAtMost(nElements - 1)) == *choice1) {
         ;
     }
 }
 
+/* Function: printOptions
+ * ---------------------
+ * Prints the string representation of the elements at 2 specifed indicies
+ * of an element array. The choices for the user at every interation of
+ * the main program.
+ *
+ * elements: The element_t * array from which to print the options
+ *
+ * choice1: the index of one element in the element array to be printed
+ *
+ * choice2: the index of the other element in the element array to be printed
+ */
 void printOptions(element_t **elements, int choice1, int choice2) {
     printf("%s %s\n", "1) ", elements[choice1]->element);
     printf("%s %s\n", "2) ", elements[choice2]->element);
 }
 
+/* Function: writeDataToSaveFile
+ * ---------------------
+ * writes the current ranking data to a save file in the from int1,int2\n where
+ * every line represents and element, int1 is the number of times the element
+ * was selected, and int2 in the number of times the element appeared
+ *
+ * elements: The element_t * array to store
+ *
+ * nElements: The number of elements in the elemtent array
+ *
+ * file: the open file pointer in which to save the results
+ */
 void writeDataToSaveFile(element_t **elements, int nElements, FILE *file) {
     for(int i = 0; i < nElements; i++){
         fprintf(file, "%d/%d\n", elements[i]->selected, elements[i]->appeared);
     }
 }
 
+/* Function: getValidResponse
+ * ---------------------
+ * promts single character responses from stdin until is recieves a valid
+ * character.
+ *
+ * characterSet: The set of valid characters for the current promt
+ *
+ * returns: the valid character recieved
+ */
 char getValidResponse(char *characterSet) {
     char *line = NULL;
     size_t nLine;
@@ -385,7 +588,7 @@ int main(int argc, char **argv) {
     char quitCharacterSet[] = {'y','n','\0'};
     char *flags[argc];
     bool fFlag = false, aFlag = false, isReadSuccess;
-    int nElements, nFlags, longest_string, counter = 0;
+    int nElements, nFlags, longestString, counter = 0;
     element_t **elements;
 
     nFlags = getFlags(argc, argv, flags);
@@ -393,19 +596,23 @@ int main(int argc, char **argv) {
     getFiles(argc, argv, nFlags, &inputfile, &saveFile);
 
     nElements = countLines(inputfile);
+
     elements = initElementArray(nElements);
+    if(elements == NULL)
+        return EXIT_FAILURE;
 
     if(saveFile != NULL) {
         isReadSuccess = readDataFromSaveFile(elements, nElements, saveFile);
         if(!isReadSuccess) {
             freeElementArray(elements, nElements);
-            fprintf(stderr, "invalid number of elements in save file -- expexed: %d lines\n", nElements);
+            fprintf(stderr, "invalid number of elements in save file\
+-- expexed: %d lines\n", nElements);
             return EXIT_FAILURE;
         }
         fclose(saveFile);
     }
 
-    longest_string = readDataFromInputFile(elements, nElements, inputfile);
+    longestString = readDataFromInputFile(elements, nElements, inputfile);
     fclose(inputfile);
 
     srand(time(0)); //initialize the random seed
@@ -423,10 +630,15 @@ int main(int argc, char **argv) {
             }
         }
 
-        generateOptions(elements, nElements, &choice1, &choice2);
+        generateOptions(nElements, &choice1, &choice2);
         printOptions(elements, choice1, choice2);
 
         char input = getValidResponse(inputCharacterSet);
+
+        char *saveMessage =
+            "please input the file where you'd like to save the results";
+        char *quitMessage =
+            "Would you like to save the results of your current session?[y/n]";
 
         switch(input){
             case '1':
@@ -436,16 +648,16 @@ int main(int argc, char **argv) {
                 elements[choice2]->selected++;
                 break;
             case 's':
-                saveFile = promtFile("w", "please input the file where you'd like to save the results");
+                saveFile = promtFile("w", saveMessage);
                 writeDataToSaveFile(elements, nElements, saveFile);
                 fclose(saveFile);
                 break;
             case 'q':
                 running = false;
-                printf("Would you like to save the results of your current session? [y/n]\n");
+                printf("%s\n", quitMessage);
                 char toSave = getValidResponse(quitCharacterSet);
                 if(toSave == 'y') {
-                    saveFile = promtFile("w", "please input the file where you'd like to save the results");
+                    saveFile = promtFile("w", saveMessage);
                     writeDataToSaveFile(elements, nElements, saveFile);
                     fclose(saveFile);
                 }
@@ -459,7 +671,7 @@ int main(int argc, char **argv) {
     }
 
     sortElements(elements, nElements);
-    printElements(elements, nElements, fFlag, longest_string);
+    printElements(elements, nElements, fFlag, longestString);
 
     freeElementArray(elements, nElements);
 
