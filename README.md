@@ -29,3 +29,4 @@ on "quit" the program will promt the user whether he wants to save. The user wil
  This algorithm requires a reletivly large data set to produce accurate results but over an infinatly large sample, it converges to the actual rankings.
  In the case that there are not enough pairwise comparisons to yeild a unique fraction for each element, the elements with the same fraction appear in random order in the output.
  
+test changes with ssh key
